@@ -1,0 +1,64 @@
+<project name="google-singleton-detector" default="zip">
+	<property name="version" value="0.7.4"/>
+		
+	<target name="clean">
+		<delete dir="target"/>
+	</target>
+	
+	<target name="compile" depends="clean">
+		<mkdir dir="target/classes"/>
+		<javac srcdir="src/java" destdir="target/classes" classpath="lib/asm-3.0.jar"/>
+	</target>
+	
+	
+	<target name="compile-tests" depends="compile">
+		<mkdir dir="target/test-classes"/>
+		<javac srcdir="src/test" destdir="target/test-classes" classpath="target/classes;lib/asm-3.0.jar;lib/junit.jar"/>
+	</target>
+	
+	<target name="test" depends="compile-tests">
+		<mkdir dir="target/test-reports"/>
+		<junit printsummary="yes" haltonfailure="yes">
+			<classpath>
+				<pathelement location="src/test"/>
+				<pathelement location="target/classes"/>
+				<pathelement location="target/test-classes"/>
+				<pathelement location="lib/asm-3.0.jar"/>
+				<pathelement location="lib/junit.jar"/>
+			</classpath>
+			
+			<formatter type="plain"/>
+			
+			<batchtest fork="yes" todir="target/test-reports">
+				<fileset dir="src/test">
+					<include name="**/*Test*.java"/>
+					<exclude name="**/AllTests.java"/>
+				</fileset>
+			</batchtest>
+		</junit>
+	</target>
+	
+	<target name="jar" depends="test">
+		<taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="lib/jarjar.jar"/>
+		<jarjar jarfile="target/gsd.jar">
+			<manifest>
+				<attribute name="Main-Class" value="com.google.singletondetector.Main"/>
+			</manifest>
+			<fileset dir="target/classes"/>
+			<zipfileset src="lib/asm-3.0.jar"/>
+			<rule pattern="org.objectweb.asm.**" result="com.google.singletondetector.asm.@1"/>
+		</jarjar>
+	</target>
+	
+	<target name="zip" depends="jar">
+		<zip destfile="target/gsd-${version}.zip">
+			<fileset dir=".">
+				<include name="README.txt"/>
+				<include name="LICENSE-2.0.txt"/>
+			</fileset>
+			<fileset dir="target">
+				<include name="gsd.jar"/>
+			</fileset>
+        	</zip>
+	</target>	
+</project>
